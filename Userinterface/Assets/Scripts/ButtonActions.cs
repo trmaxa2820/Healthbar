@@ -10,43 +10,40 @@ public class ButtonActions : MonoBehaviour
     [SerializeField] private Slider _healthBar;
     [SerializeField] private Image _healthBarFillImage;
     [SerializeField] private Gradient _gradientColor;
+    [SerializeField] private float _actionDuration;
 
     private Coroutine _currentStartedCoroutine;
-    private float _previousHealth;
 
     public void TakeDamageOnClick()
     {
-        _previousHealth = _healthBar.value;
-        _currentStartedCoroutine = StartCoroutine(TakeDamage());
+        _currentStartedCoroutine = StartCoroutine(ChangeHealth(_healthBar.value, _healthBar.value - _damage));
     }
 
     public void TakeHealthOnClick()
     {
-        _previousHealth = _healthBar.value;
-        _currentStartedCoroutine = StartCoroutine(TakeHealth());
+        _currentStartedCoroutine = StartCoroutine(ChangeHealth(_healthBar.value, _healthBar.value + _health));
     }
 
-    public IEnumerator TakeDamage()
+    public IEnumerator ChangeHealth(float startValue, float endValue)
     {
-        while (_healthBar.value > (_previousHealth - _damage) && _healthBar.value > _healthBar.minValue)
-        {
-            _healthBar.value -= _damage * Time.deltaTime;
-            _healthBarFillImage.color = _gradientColor.Evaluate(_healthBar.normalizedValue);
-            yield return null;
-        }
-        if(_currentStartedCoroutine != null)
-            StopCoroutine(_currentStartedCoroutine);
-    }
+        float elapsed = 0;
+        float nextValue;
 
-    public IEnumerator TakeHealth()
-    {
-        while (_healthBar.value < (_previousHealth + _damage) && _healthBar.value < _healthBar.maxValue)
+        while (elapsed < _actionDuration)
         {
-            _healthBar.value += _health * Time.deltaTime;
-            _healthBarFillImage.color = _gradientColor.Evaluate(_healthBar.normalizedValue);
+            nextValue = Mathf.Lerp(startValue, endValue, elapsed / _actionDuration);
+            FillHealthBar(nextValue);
+            elapsed += Time.deltaTime;
             yield return null;
         }
+        FillHealthBar(endValue);
         if (_currentStartedCoroutine != null)
             StopCoroutine(_currentStartedCoroutine);
+    }
+
+    public void FillHealthBar(float fillValue)
+    {
+        _healthBar.value = fillValue;
+        _healthBarFillImage.color = _gradientColor.Evaluate(_healthBar.normalizedValue);
     }
 }
